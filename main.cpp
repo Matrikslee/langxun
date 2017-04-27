@@ -1,24 +1,49 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <utility>
 #include <iostream>
+#include <time.h>
 #include "langxun.h"
 #define INF 1e9
-#define Depth 3///ËÑË÷Éî¶È
+#define Depth 3///æœç´¢æ·±åº¦
 using namespace std;
-int Color;///1´ú±íºÚ,2´ú±í°×
-int max_value=-INF;///³õÊ¼»¯×î³õµÄ¾ÖÃæ¹ÀÖµ
-int Map[21][21],Copy_Map[Depth+1][21][21];///¾ÖÃæ
-int Map_value[21][21];///¹ÀÖµ±í
-int Step_x[500],Step_y[500];///ÀúÊ·×Å·¨
-int dirx[10]={-1,1,0,0,-1,1,-1,1};///°Ë¸ö±éÀú·½Ïò,ÕıÉÏ£¬ÕıÏÂ£¬Õı×ó£¬ÕıÓÒ£¬×óÉÏ£¬×óÏÂ£¬ÓÒÉÏ£¬ÓÒÏÂ
-int diry[10]={0,0,-1,1,-1,-1,1,1};
+int Color;///1ä»£è¡¨é»‘,2ä»£è¡¨ç™½
+int max_value=-INF;///åˆå§‹åŒ–æœ€åˆçš„å±€é¢ä¼°å€¼
+int Map[21][21],Copy_Map[Depth+1][21][21];///å±€é¢
+int Step_x[500],Step_y[500];///å†å²ç€æ³•
+///å…«ä¸ªæ–¹å‘,æ­£ä¸Šï¼Œæ­£ä¸‹ï¼Œæ­£å·¦ï¼Œæ­£å³ï¼Œå·¦ä¸Šï¼Œå·¦ä¸‹ï¼Œå³ä¸Šï¼Œå³ä¸‹
+#define MAX_DIRNUM (8)
+int dirx[MAX_DIRNUM]={-1,1,0,0,-1,1,-1,1};
+int diry[MAX_DIRNUM]={0,0,-1,1,-1,-1,1,1};
+///ä¼°å€¼è¡¨
+int Map_value[19][19]={
+  {9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9},
+  {9,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+  {9,1,9,1,5,1,8,1,7,1,5,1,1,1,1,2,1,1,9},
+  {9,1,1,5,5,5,5,5,5,5,5,5,5,5,5,5,1,1,9},
+  {9,1,8,5,3,2,1,1,1,1,1,1,1,2,3,5,1,1,9},
+  {9,1,1,5,1,1,1,1,1,1,1,1,1,1,3,5,1,1,9},
+  {9,1,8,5,1,1,1,9,9,9,9,9,1,1,3,5,1,1,9},
+  {9,1,1,5,1,1,1,9,1,1,1,9,1,1,3,5,1,1,9},
+  {9,1,7,5,1,1,1,9,1,1,1,9,1,1,3,5,1,1,9},
+  {9,1,1,5,1,1,1,9,1,1,1,9,1,1,2,5,2,1,9},
+  {9,1,5,5,1,1,1,9,1,1,1,9,1,1,2,5,2,1,9},
+  {9,1,1,5,1,1,1,9,9,9,9,9,1,1,2,5,2,1,9},
+  {9,1,8,5,1,1,1,1,1,1,1,1,1,1,2,5,2,1,9},
+  {9,1,5,5,5,1,1,1,1,1,1,1,1,1,5,5,1,1,9},
+  {9,1,5,5,5,1,1,1,1,1,1,1,1,1,5,5,1,1,9},
+  {9,1,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,1,9},
+  {9,1,9,1,8,1,8,1,7,1,7,1,8,1,8,1,1,1,9},
+  {9,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,9},
+  {9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9},
+};
 
 struct node{
     int x,y;
-    int MoveDir[10];
+    int MoveDir[8];
     int DirNum;
-}Ans,Move[Depth+1][500];///×îÖÕ´ğ°¸ºÍ×Å·¨Õ»
-int MoveDepth[Depth+1]={0};///Ö¸³ö×Å·¨Õ»µÄÉî¶È
+}Ans,Move[Depth+1][500];///æœ€ç»ˆç­”æ¡ˆå’Œç€æ³•æ ˆ
+int MoveDepth[Depth+1]={0};///æŒ‡å‡ºç€æ³•æ ˆçš„æ·±åº¦
 
 bool check(int x,int y){
     if (x<1||x>19) return false;
@@ -26,312 +51,162 @@ bool check(int x,int y){
     return !((x>=9&&x<=11)&&(y>=9&&y<=11));
 }
 
-bool Is_Right(int handle,int x,int y,int depth,int color)///¾ä±ú1´ú±í¼ÆËã³öÄÄĞ©·½ÏòÓĞ¿É·­×ªÆå×Ó,¾ä±ú2´ú±íÅĞ¶Ï¸ÃµãÊÇ·ñÊÇ¿ÉĞĞ½â£¬1´ú±íºÚÆå£¬2´ú±í°×Æå
-{
-    int anti_color=color^3;///µĞ·½ÑÕÉ«
-    bool flag=false;
-    bool flag2=false;///´¦Àíhandle==1
-    if(handle==1)
-        Move[depth][MoveDepth[depth]].DirNum=0;
+bool Is_Right(int handle,int x,int y,int depth,int color){
+  ///å¥æŸ„1ä»£è¡¨è®¡ç®—å‡ºå“ªäº›æ–¹å‘æœ‰å¯ç¿»è½¬æ£‹å­,å¥æŸ„2ä»£è¡¨åˆ¤æ–­è¯¥ç‚¹æ˜¯å¦æ˜¯å¯è¡Œè§£ï¼Œ1ä»£è¡¨é»‘æ£‹ï¼Œ2ä»£è¡¨ç™½æ£‹
+  int opp_color = color^3;
+  int dirnum = 0;
+  if(handle==1)
+    Move[depth][MoveDepth[depth]].DirNum=0;
 
-    for(int i=x-1;check(i,y);i--)///ÕıÉÏ·½
-    {
-        if(Map[i][y]==anti_color)///Óöµ½µĞ·½Æå×Ó£¬´ò¿ª±ê¼ÇÎ»
-            flag=true;
-        else if(Map[i][y]==color&&flag)///ÔÚÖÕ¶ËÓöµ½ÎÒ·½Æå×Ó£¬ÇÒÖĞ¼äÓĞµĞ·½Æå×Ó
-        {
-            if(handle==1)
-            {
-                Move[depth][MoveDepth[depth]].MoveDir[Move[depth][MoveDepth[depth]].DirNum++]=0;
-                flag=false;
-                flag2=true;
-                break;
-            }
-            else
-                return true;
-        }
-        else
-            break;
+  for(int d=0; d<MAX_DIRNUM; ++d) {
+    bool flag = false;
+    for (int i=x+dirx[d],j=y+diry[d]; check(i,j); i+=dirx[d], j+=diry[d]){
+      if(!Map[i][j]) { break; }
+      if(Map[i][j]==opp_color) {
+        flag =true;
+        continue;
+      }
+      if(flag) {
+        if(handle!=1) { return true; }
+        Move[depth][MoveDepth[depth]].MoveDir[dirnum++] = d;
+      }
+      break;
     }
-    flag=false;
-
-    for(int i=x+1;check(i,y);i++)///ÕıÏÂ·½
-    {
-        if(Map[i][y]==anti_color)///Óöµ½µĞ·½Æå×Ó£¬´ò¿ª±ê¼ÇÎ»
-            flag=true;
-        else if(Map[i][y]==color&&flag)///ÔÚÖÕ¶ËÓöµ½ÎÒ·½Æå×Ó£¬ÇÒÖĞ¼äÓĞµĞ·½Æå×Ó
-        {
-            if(handle==1)
-            {
-                Move[depth][MoveDepth[depth]].MoveDir[Move[depth][MoveDepth[depth]].DirNum++]=1;
-                flag=false;
-                flag2=true;
-                break;
-            }
-            else
-                return true;
-        }
-        else
-            break;
-    }
-    flag=false;
-
-    for(int j=y-1;check(x,j);j--)///Õı×ó·½
-    {
-        if(Map[x][j]==anti_color)///Óöµ½µĞ·½Æå×Ó£¬´ò¿ª±ê¼ÇÎ»
-            flag=true;
-        else if(Map[x][j]==color&&flag)///ÔÚÖÕ¶ËÓöµ½ÎÒ·½Æå×Ó£¬ÇÒÖĞ¼äÓĞµĞ·½Æå×Ó
-        {
-            if(handle==1)
-            {
-                Move[depth][MoveDepth[depth]].MoveDir[Move[depth][MoveDepth[depth]].DirNum++]=2;
-                flag=false;
-                flag2=true;
-                break;
-            }
-            else
-                return true;
-        }
-        else
-            break;
-    }
-    flag=false;
-
-    for(int j=y+1;check(x,j);j++)///ÕıÓÒ·½
-    {
-        if(Map[x][j]==anti_color)///Óöµ½µĞ·½Æå×Ó£¬´ò¿ª±ê¼ÇÎ»
-            flag=true;
-        else if(Map[x][j]==color&&flag)///ÔÚÖÕ¶ËÓöµ½ÎÒ·½Æå×Ó£¬ÇÒÖĞ¼äÓĞµĞ·½Æå×Ó
-        {
-            if(handle==1)
-            {
-                Move[depth][MoveDepth[depth]].MoveDir[Move[depth][MoveDepth[depth]].DirNum++]=3;
-                flag=false;
-                flag2=true;
-                break;
-            }
-            else
-                return true;
-        }
-        else
-            break;
-    }
-    flag=false;
-
-    for(int i=x-1,j=y-1;check(i,j);i--,j--)///×óÉÏ·½
-    {
-        if(Map[i][j]==anti_color)///Óöµ½µĞ·½Æå×Ó£¬´ò¿ª±ê¼ÇÎ»
-            flag=true;
-        else if(Map[i][j]==color&&flag)///ÔÚÖÕ¶ËÓöµ½ÎÒ·½Æå×Ó£¬ÇÒÖĞ¼äÓĞµĞ·½Æå×Ó
-        {
-            if(handle==1)
-            {
-                Move[depth][MoveDepth[depth]].MoveDir[Move[depth][MoveDepth[depth]].DirNum++]=4;
-                flag=false;
-                flag2=true;
-                break;
-            }
-            else
-                return true;
-        }
-        else
-            break;
-    }
-    flag=false;
-
-    for(int i=x+1,j=y-1;check(i,j);i++,j--)///×óÏÂ·½
-    {
-        if(Map[i][j]==anti_color)///Óöµ½µĞ·½Æå×Ó£¬´ò¿ª±ê¼ÇÎ»
-            flag=true;
-        else if(Map[i][j]==color&&flag)///ÔÚÖÕ¶ËÓöµ½ÎÒ·½Æå×Ó£¬ÇÒÖĞ¼äÓĞµĞ·½Æå×Ó
-        {
-            if(handle==1)
-            {
-                Move[depth][MoveDepth[depth]].MoveDir[Move[depth][MoveDepth[depth]].DirNum++]=5;
-                flag=false;
-                flag2=true;
-                break;
-            }
-            else
-                return true;
-        }
-        else
-            break;
-    }
-    flag=false;
-
-    for(int i=x-1,j=y+1;check(i,j);i--,j++)///ÓÒÉÏ·½
-    {
-        if(Map[i][j]==anti_color)///Óöµ½µĞ·½Æå×Ó£¬´ò¿ª±ê¼ÇÎ»
-            flag=true;
-        else if(Map[i][j]==color&&flag)///ÔÚÖÕ¶ËÓöµ½ÎÒ·½Æå×Ó£¬ÇÒÖĞ¼äÓĞµĞ·½Æå×Ó
-        {
-            if(handle==1)
-            {
-                Move[depth][MoveDepth[depth]].MoveDir[Move[depth][MoveDepth[depth]].DirNum++]=6;
-                flag=false;
-                flag2=true;
-                break;
-            }
-            else
-                return true;
-        }
-        else
-            break;
-    }
-    flag=false;
-
-    for(int i=x+1,j=y+1;check(i,j);i++,j++)///ÓÒÏÂ·½
-    {
-        if(Map[i][j]==anti_color)///Óöµ½µĞ·½Æå×Ó£¬´ò¿ª±ê¼ÇÎ»
-            flag=true;
-        else if(Map[i][j]==color&&flag)///ÔÚÖÕ¶ËÓöµ½ÎÒ·½Æå×Ó£¬ÇÒÖĞ¼äÓĞµĞ·½Æå×Ó
-        {
-            if(handle==1)
-            {
-                Move[depth][MoveDepth[depth]].MoveDir[Move[depth][MoveDepth[depth]].DirNum++]=7;
-                flag=false;
-                flag2=true;
-                break;
-            }
-            else
-                return true;
-        }
-        else
-            break;
-    }
-    flag=false;
-
-    return handle==1?flag2:false;///handle=1Ê±£¬·µ»Øflag2£¬handle=2Ê±¾ùÎŞ¿ÉĞĞ½â
+  }
+  Move[depth][MoveDepth[depth]].DirNum = dirnum;
+  return dirnum!=0;
 }
 
+///å¥æŸ„1ä»£è¡¨å¯»æ‰¾å¯è¡Œç€æ³•å¹¶å…¥æ ˆï¼Œå¥æŸ„2ä»£è¡¨ä¼°å€¼è®¡ç®—sum(ä¼°å€¼è¡¨*æ¯ä¸ªè½å­ç‚¹)
 int CanMove(int handle,int depth,int color){
-  int eva=0, cnt=0;
-  if(handle==1)MoveDepth[depth]=0;
+  int evaluate=0,cnt=0;
+  if(handle==1)
+    MoveDepth[depth]=0;
   for(int i=1;i<=19;i++) {
     for(int j=1;j<=19;j++) {
-      if(Map[i][j]==0&&check(i,j)&&Is_Right(1,i,j,depth,color)){
-        if(handle==1) {
-          Move[depth][MoveDepth[depth]].x=i;///ÔÊĞíµÄ×Å·¨£¬ÈëÕ»
+      if(Map[i][j]==0&&check(i,j)&&Is_Right(handle,i,j,depth,color)){
+        ///æ‰¾åˆ°ä¸€ä¸ªèµ·ç‚¹
+        if(handle==1){
+          Move[depth][MoveDepth[depth]].x=i;///å…è®¸çš„ç€æ³•ï¼Œå…¥æ ˆ
           Move[depth][MoveDepth[depth]].y=j;
           MoveDepth[depth]++;
         } else {
-          ++eva;
+          evaluate+=Map_value[i-1][j-1];
         }
         cnt++;
       }
     }
   }
-  return handle==1?cnt:eva;
+  return handle==1?cnt:evaluate;///å¥æŸ„1è¿”å›ç€æ³•ä¸ªæ•°ï¼Œå¥æŸ„2è¿”å›ä¼°å€¼
 }
 
 void MakeMove(int depth,int color){
-    int anti_color=color^3;///µĞ·½ÑÕÉ«
-    ///¸³ÖµÆå¾Ö¸±±¾
-    for(int i=1;i<=19;i++)
-        for(int j=1;j<=19;j++)
-            Copy_Map[depth][i][j]=Map[i][j];
+  ///æ¨¡æ‹Ÿè½å­
+  ///èµ‹å€¼æ£‹å±€å‰¯æœ¬
+  for(int i=1;i<=19;i++)
+    for(int j=1;j<=19;j++)
+      Copy_Map[depth][i][j]=Map[i][j];
 
-    int x=Move[depth][MoveDepth[depth]-1].x;
-    int y=Move[depth][MoveDepth[depth]-1].y;
-    int dirnum=Move[depth][MoveDepth[depth]-1].DirNum;
+  int casenum = rand()%MoveDepth[depth];
 
-    ///½øĞĞÆå¾Ö±ä»»
-    Map[x][y]=color;
-    for(int k=0;k<dirnum;k++)///²»Í¬·½Ïò½øĞĞ·­×ª
-    {
-        int xx=dirx[Move[depth][MoveDepth[depth]-1].MoveDir[k]];
-        int yy=diry[Move[depth][MoveDepth[depth]-1].MoveDir[k]];
-        int step=1;
-        while(Map[x+xx*step][y+yy*step]==anti_color)
-        {
-            Map[x+xx*step][y+yy*step]=color;
-            step++;
-        }
+  int x = Move[depth][casenum].x;
+  int y = Move[depth][casenum].y;
+  int dirnum = Move[depth][casenum].DirNum;
+
+  ///è¿›è¡Œæ£‹å±€å˜æ¢
+  for(int k=0;k<dirnum;k++){///ä¸åŒæ–¹å‘è¿›è¡Œç¿»è½¬
+    int d = Move[depth][casenum].MoveDir[k];
+    while(Map[x][y]!=color) {
+      Map[x][y]=color;
+      x += dirx[d];
+      y += diry[d];
     }
+  }
 }
 
-void UnMakeMove(int depth){///È¡ÏûÂä×Ó
+void UnMakeMove(int depth){///å–æ¶ˆè½å­
   for(int i=1;i<=19;i++)
     for(int j=1;j<=19;j++)
       Map[i][j]=Copy_Map[depth][i][j];
 }
 
 int Evaluation(int color){
-  int opp_color=color^3;///µĞ·½ÑÕÉ«
-
   int obj_val = 0, opp_val = 0;
 
-  obj_val = CanMove(2,Depth,color);
-  opp_val = CanMove(2,Depth,color^3);
+  for ( int i = 1; i <= 19; ++ i ) {
+    for ( int j = 1; j <= 19; ++j ) {
+      if( Map[i][j] == color ) {
+        obj_val += Map_value[i-1][j-1];
+      }
+      if( Map[i][j] == (color^3)) {
+        opp_val += Map_value[i-1][j-1];
+      }
+    }
+  }
 
-  return opp_val-obj_val;
+  return obj_val-opp_val;
 }
 
-int Alpha_Beta(int depth, int alpha, int beta, int color)///color´ú±í¼´½«ÒªĞĞ¶¯µÄÄÇ·½
-{
-  if(depth==0) {//µÖ´ïËÑË÷Éî¶È
+int Alpha_Beta(int depth, int alpha, int beta, int color){
+  ///colorä»£è¡¨å³å°†è¦è¡ŒåŠ¨çš„é‚£æ–¹
+  if(depth==0)///æŠµè¾¾æœç´¢æ·±åº¦
     return Evaluation(color);
-  }
-  ///CanMove×Å·¨Éú³ÉÆ÷£¬Ë³´ø½«ËùÓĞ×Å·¨µÄ·­×ª·½Ïò¼ÇÂ¼ÏÂ
-  if(!CanMove(1,depth,color)) {///Ä³¸öÍæ¼ÒÎŞ·¨ÏÂÆå
-    return Evaluation(color);
+
+  ///CanMoveç€æ³•ç”Ÿæˆå™¨ï¼Œé¡ºå¸¦å°†æ‰€æœ‰ç€æ³•çš„ç¿»è½¬æ–¹å‘è®°å½•ä¸‹
+  if(!CanMove(1,depth,color)){///æŸä¸ªç©å®¶æ— æ³•ä¸‹æ£‹
+    return Evaluation(color^3); // åº”è¯¥è¿”å›å¯¹æ‰‹çš„ä¼°å€¼
   }
   int maxval = -INF;
-  ///·ñÔò£¬CanMoveº¯ÊıÑ¡Ôñ³ö¸ÃcolorËùÓĞ¿ÉÒÔÏÂµÄµã£¬Í¨¹ıÕ»·µ»Ø
-  while(MoveDepth[depth]){
-    MakeMove(depth,color);///Ä£ÄâÂä×Ó
+  ///å¦åˆ™ï¼ŒCanMoveå‡½æ•°é€‰æ‹©å‡ºè¯¥coloræ‰€æœ‰å¯ä»¥ä¸‹çš„ç‚¹ï¼Œé€šè¿‡æ ˆè¿”å›
+  while(MoveDepth[depth]) {
+    MakeMove(depth,color);///æ¨¡æ‹Ÿè½å­
     int val=-Alpha_Beta(depth-1,-beta,-alpha,color^3);
     UnMakeMove(depth);
     if(val>alpha) {
       if(val>=beta)
-        return beta;
+            return beta;
       alpha=val;
     }
     if(val>maxval)
       maxval = val;
     MoveDepth[depth]--;
   }
-  return alpha;
+
+  return maxval;
 }
 
-void Init(){///³õÊ¼»¯
-  readBoard(Map);///ÔØÈëµØÍ¼
-  ///ÔØÈë¹ÀÖµ±í
-  /*FILE *fp = fopen("Map_value.txt","r");
-    if(fp==NULL) {printf("Error!");return ;}
-    for (int i=1;i<=19;i++)
-    for (int j=1;j<=19;j++)
-    fscanf(fp,"%d",&Map_value[i][j]);
-    fclose(fp);*/
+void init(){///åˆå§‹åŒ–
+  srand(time(NULL));
+  readBoard(Map);///è½½å…¥åœ°å›¾
   int Step=readStep(Step_x,Step_y);
-  Color = Step%2+1;
+  Color = 1+(Step&1);
 }
 
 int main(){
-    Init();///³õÊ¼»¯
-    if(!CanMove(1,Depth,Color)) {
-      outputAnswer(0,0);///ÎŞ¿ÉĞĞ×Å·¨£¬ÅĞ¸º
-      return 0;
-    }
-
-    ///·ñÔò£¬CanMoveº¯ÊıÑ¡Ôñ³ö¸ÃcolorËùÓĞ¿ÉÒÔÏÂµÄµã£¬Í¨¹ıÕ»·µ»Ø
-    while(MoveDepth[Depth])
-    {
-        MakeMove(Depth,Color);///Ä£ÄâÂä×Ó
-        int tmp_value=Alpha_Beta(Depth-1,-INF,INF,Color^3);
-        if(tmp_value>max_value)
-        {
-            Ans.x=Move[Depth][MoveDepth[Depth]-1].x;
-            Ans.y=Move[Depth][MoveDepth[Depth]-1].y;
-            max_value=tmp_value;
-        }
-        UnMakeMove(Depth);///È¡ÏûÂä×Ó
-        MoveDepth[Depth]--;
-    }
-    FILE*p = fopen("debug", "w");
-    fprintf(p, "%d %d", Ans.x, Ans.y);
-    fclose(p);
-    outputAnswer(Ans.x,Ans.y);
+  clock_t t1, t2;
+  t1 = clock();
+  init();///åˆå§‹åŒ–
+  if(!CanMove(1,Depth,Color)) {
+    outputAnswer(0,0);
     return 0;
+  }
+
+  ///å¦åˆ™ï¼ŒCanMoveå‡½æ•°é€‰æ‹©å‡ºè¯¥coloræ‰€æœ‰å¯ä»¥ä¸‹çš„ç‚¹ï¼Œé€šè¿‡æ ˆè¿”å›
+  while(MoveDepth[Depth]) {
+    MakeMove(Depth,Color);///æ¨¡æ‹Ÿè½å­
+    int tmp_value=Alpha_Beta(Depth-1,-INF,INF,Color^3);
+    if(tmp_value>max_value) {
+      Ans.x=Move[Depth][MoveDepth[Depth]-1].x;
+      Ans.y=Move[Depth][MoveDepth[Depth]-1].y;
+      max_value=tmp_value;
+    }
+    UnMakeMove(Depth);///å–æ¶ˆè½å­
+    MoveDepth[Depth]--;
+  }
+  outputAnswer(Ans.x,Ans.y);
+  t2 = clock();
+  FILE* fp = fopen("debug", "a");
+  fprintf(fp,"spent %.3lf ms by main\n",((float)(t2 - t1) / 1000000.0F ) * 1000);
+  fclose(fp);
+  return 0;
 }
